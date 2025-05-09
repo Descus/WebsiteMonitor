@@ -9,7 +9,10 @@ import java.util.concurrent.TimeUnit;
 public class UpdateManager {
     HashMap<String, Subscription> subscriptions = new HashMap<>();
     
-    public UpdateManager(){
+    public UpdateManager(){}
+
+    public void start() {
+        System.out.println("UpdateManager started!");
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         executor.scheduleAtFixedRate(this::checkUpdates, 0, Settings.MONITOR_INTERVAL, TimeUnit.of(Settings.TIME_UNIT));
     }

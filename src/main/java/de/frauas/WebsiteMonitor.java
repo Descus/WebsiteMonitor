@@ -16,10 +16,15 @@ public class WebsiteMonitor {
     HashMap<String, User> users = new HashMap<>();
     UpdateManager updateManager = new UpdateManager();
     
-    private WebsiteMonitor() {
+    private WebsiteMonitor() {}
+    
+    public void start(){
+        System.out.println("WebsiteMonitor started!");
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-        executor.scheduleAtFixedRate(this::notifyLoop, 0, Settings.NOTIFICATION_INTERVAL, TimeUnit.of(Settings.TIME_UNIT));
+        executor.scheduleAtFixedRate(this::notifyLoop, 1, Settings.NOTIFICATION_INTERVAL, TimeUnit.of(Settings.TIME_UNIT));
+        updateManager.start();
     }
+    
     private WebsiteMonitor registerUser(String name, int frequency, URI website, IResponseChannel channel){
         Subscription subscription = updateManager.addOrGetSubscription(website);
         users.put(name, new User(name, frequency, subscription, channel));
@@ -59,5 +64,6 @@ public class WebsiteMonitor {
                 .addUserWebsite("Somebody", URI.create("https://gist.githubusercontent.com/Descus/30d64f7141b03fb6536da4d58f88c0c2/raw/Test"));
         monitor.registerUser("SomebodyElse", 1, URI.create("https://news.ycombinator.com/"), new MailChannel())
                 .addUserResponseChannel("SomebodyElse", new SmsChannel());
+        monitor.start();
     }
 }
