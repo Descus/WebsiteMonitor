@@ -14,49 +14,67 @@ import java.util.concurrent.TimeUnit;
 public class WebsiteMonitor {
 
     HashMap<String, User> users = new HashMap<>();
-    UpdateManager updateManager = new UpdateManager();
+    HashMap<String, Subscription> subscriptions = new HashMap<>();
     
     private WebsiteMonitor() {}
     
     public void start(){
         System.out.println("WebsiteMonitor started!");
-        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        //Run Methods in fixed Time intervals
+        ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
+        executor.scheduleAtFixedRate(this::checkUpdateLoop, 0, Settings.MONITOR_INTERVAL, TimeUnit.of(Settings.TIME_UNIT));
         executor.scheduleAtFixedRate(this::notifyLoop, 1, Settings.NOTIFICATION_INTERVAL, TimeUnit.of(Settings.TIME_UNIT));
-        updateManager.start();
     }
-    
-    private WebsiteMonitor registerUser(String name, int frequency, URI website, IResponseChannel channel){
-        Subscription subscription = updateManager.addOrGetSubscription(website);
+
+    //<editor-fold desc="User Registration">
+    public WebsiteMonitor registerUser(String name, int frequency, URI website, IResponseChannel channel){
+        Subscription subscription = addOrGetSubscription(website);
         users.put(name, new User(name, frequency, subscription, channel));
         return this;
     }
-    
-    private WebsiteMonitor addUserWebsite(String name, URI website){
+
+    public WebsiteMonitor unregisterUser(String name){
+        users.remove(name);
+        return this;
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="User Modification">
+    public WebsiteMonitor addUserWebsite(String name, URI website){
         if (!users.containsKey(name))
             return this;
         if(website != null)
-            users.get(name).addSubscription(updateManager.addOrGetSubscription(website));
+            users.get(name).addSubscription(addOrGetSubscription(website));
         return this;
     }
     
-    private WebsiteMonitor addUserResponseChannel(String name, IResponseChannel channel){
+    public WebsiteMonitor addUserResponseChannel(String name, IResponseChannel channel){
         if (!users.containsKey(name))
             return this;
         if(channel != null)
             users.get(name).addResponseChannel(channel);
         return this;
     }
-    
-    private WebsiteMonitor unregisterUser(String name){
-        users.remove(name);
-        return this;
+    //</editor-fold>
+
+    //<editor-fold desc="Loops & Helper">
+    private Subscription addOrGetSubscription(URI subscription){
+        if (!subscriptions.containsKey(subscription.toString()))
+            subscriptions.put(subscription.toString(), new Subscription(subscription));
+        return subscriptions.get(subscription.toString());
+    }
+
+    private void checkUpdateLoop(){
+        System.out.println("Checking for updates ...");
+        subscriptions.forEach((_, value) -> value.CheckUpdate());
     }
     
-    public void notifyLoop(){
-        users.forEach((s, user) -> {
+    private void notifyLoop(){
+        users.forEach((_, user) -> {
             user.checkUpdate();
         });
     }
+    //</editor-fold>
     
     public static void main(String[] args) {
         WebsiteMonitor monitor = new WebsiteMonitor();

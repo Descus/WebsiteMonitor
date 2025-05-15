@@ -12,15 +12,15 @@ public class User {
     private final String name;
     private final int frequency;
     private LocalDateTime lastNotification;
-    private final List<IResponseChannel> responseChannel = new ArrayList<>();
+    private final List<IResponseChannel> responseChannels = new ArrayList<>();
 
     private final HashMap<Subscription, LocalDateTime> subscriptions = new HashMap<>();
 
-    public User(String name, int frequency, Subscription subscription, IResponseChannel responseChannel) {
+    public User(String name, int frequency, Subscription subscription, IResponseChannel responseChannels) {
         this.name = name;
         this.frequency = frequency;
         addSubscription(subscription);
-        addResponseChannel(responseChannel);
+        addResponseChannel(responseChannels);
     }
 
     public void addSubscription(Subscription subscription) {
@@ -28,7 +28,11 @@ public class User {
     }
     
     public void addResponseChannel(IResponseChannel responseChannel) {
-        this.responseChannel.add(responseChannel);
+        this.responseChannels.add(responseChannel);
+    }
+    
+    public void removeResponseChannel(IResponseChannel responseChannel) {
+        this.responseChannels.remove(responseChannel);
     }
 
     public void cancelSubscription(Subscription subscription){
@@ -41,7 +45,7 @@ public class User {
 
     private void notify(String message) {
         if (lastNotification == null || lastNotification.plus((long) frequency * Settings.NOTIFICATION_INTERVAL, Settings.TIME_UNIT).isBefore(LocalDateTime.now())){
-            responseChannel.forEach(channel -> channel.send(message));
+            responseChannels.forEach(channel -> channel.send(message));
             lastNotification = LocalDateTime.now();
         }
     }
